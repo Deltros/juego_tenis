@@ -5,7 +5,7 @@ class Scoreboard {
     this.scene = scene;
     this.scores = [0, 0];
     this.text = scene.add
-      .text(offsetX + w / 2, offsetY + h * 0.52, "", { fontSize: "32px", fill: "#fff" })
+      .text(offsetX + w / 2, offsetY + h + 30, "", { fontSize: "32px", fill: "#fff" })
       .setOrigin(0.5);
     this.update();
   }

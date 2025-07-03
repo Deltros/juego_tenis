@@ -3,6 +3,7 @@ class TennisScene extends Phaser.Scene {
     super("TennisScene");
     this.ballInPlay = false;
     this.maxBallSpeed = 600;
+    this.lastHitter = 0;
   }
 
   preload() {}
@@ -48,6 +49,9 @@ class TennisScene extends Phaser.Scene {
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
     this.ball.body.setMaxVelocity(this.maxBallSpeed, this.maxBallSpeed);
     this.ball.body.enable = false;
+    this.ball.body.onWorldBounds = true;
+
+    this.physics.world.on("worldbounds", this.onWorldBounds, this);
 
     this.physics.add.collider(this.ball, this.player1, this.onPlayerHit, null, this);
     this.physics.add.collider(this.ball, this.player2, this.onPlayerHit, null, this);
@@ -125,13 +129,6 @@ class TennisScene extends Phaser.Scene {
       }
     }
 
-    if (this.ball.y < offsetY) {
-      this.scoreboard.pointFor(0);
-      this.resetBall();
-    } else if (this.ball.y > offsetY + h) {
-      this.scoreboard.pointFor(1);
-      this.resetBall();
-    }
   }
 
   onPlayerHit(ball, player) {
@@ -139,6 +136,8 @@ class TennisScene extends Phaser.Scene {
     const playerBody = player.body;
     const relativeX = ball.x - player.x;
     const dir = player === this.player1 ? -1 : 1;
+
+    this.lastHitter = player === this.player1 ? 0 : 1;
 
     const vx = ballBody.velocity.x + relativeX * 5 + playerBody.velocity.x * 0.5;
     const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.5);
@@ -149,6 +148,17 @@ class TennisScene extends Phaser.Scene {
     if (speed > this.maxBallSpeed) {
       const scale = this.maxBallSpeed / speed;
       ballBody.setVelocity(vx * scale, vy * scale);
+    }
+  }
+
+  onWorldBounds(body, up, down) {
+    if (body.gameObject !== this.ball || !this.ballInPlay) {
+      return;
+    }
+
+    if (up || down) {
+      this.scoreboard.pointFor(this.lastHitter);
+      this.resetBall();
     }
   }
 
