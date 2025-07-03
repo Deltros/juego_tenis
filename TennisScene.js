@@ -11,6 +11,9 @@ class TennisScene extends Phaser.Scene {
     const w = this.sys.game.config.width;
     const h = this.sys.game.config.height;
 
+    // Increase the physics simulation rate to improve collision accuracy
+    this.physics.world.setFPS(120);
+
     crearCancha(this, w, h);
 
     const paddleWidth = w * 0.15;
