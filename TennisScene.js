@@ -4,6 +4,7 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.maxBallSpeed = 600;
     this.lastHitter = 0;
+    this.ballSpin = 0;
   }
 
   preload() {}
@@ -157,6 +158,14 @@ class TennisScene extends Phaser.Scene {
         const scale = this.maxBallSpeed / speed;
         this.ball.body.setVelocity(vx * scale, vy * scale);
       }
+
+      if (this.ballSpin !== 0) {
+        this.ball.body.setVelocityX(this.ball.body.velocity.x + this.ballSpin);
+        this.ballSpin *= 0.98;
+        if (Math.abs(this.ballSpin) < 0.1) {
+          this.ballSpin = 0;
+        }
+      }
     }
 
   }
@@ -169,8 +178,13 @@ class TennisScene extends Phaser.Scene {
 
     this.lastHitter = player === this.player1 ? 0 : 1;
 
-    const vx = ballBody.velocity.x + relativeX * 5 + playerBody.velocity.x * 0.5;
-    const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.5);
+    const vx =
+      ballBody.velocity.x +
+      relativeX * 5 +
+      playerBody.velocity.x * 0.8;
+    const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.8);
+
+    this.ballSpin = playerBody.velocity.x * 0.02;
 
     ballBody.setVelocity(vx, vy);
 
@@ -196,6 +210,7 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.ball.body.setVelocity(0);
     this.ball.body.enable = false;
+    this.ballSpin = 0;
     this.player1.setPosition(
       this.offsetX + this.courtWidth / 2,
       this.offsetY + this.courtHeight - this.player1.height / 2
