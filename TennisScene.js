@@ -184,7 +184,8 @@ class TennisScene extends Phaser.Scene {
       playerBody.velocity.x * 0.8;
     const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.8);
 
-    this.ballSpin = playerBody.velocity.x * 0.02;
+    // Reverse spin direction so it curves opposite to the player's movement
+    this.ballSpin = -playerBody.velocity.x * 0.02;
 
     ballBody.setVelocity(vx, vy);
 
