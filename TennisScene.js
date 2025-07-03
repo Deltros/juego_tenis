@@ -21,6 +21,7 @@ class TennisScene extends Phaser.Scene {
 
     const radius = h * 0.01;
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
+    this.ball.body.setMaxVelocity(this.maxBallSpeed, this.maxBallSpeed);
 
     this.physics.add.collider(this.ball, this.player1);
     this.physics.add.collider(this.ball, this.player2);
