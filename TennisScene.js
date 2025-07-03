@@ -12,6 +12,9 @@ class TennisScene extends Phaser.Scene {
     const canvasW = this.sys.game.config.width;
     const canvasH = this.sys.game.config.height;
 
+    this.canvasWidth = canvasW;
+    this.canvasHeight = canvasH;
+
     const w = 600;
     const h = 800;
 
@@ -37,6 +40,7 @@ class TennisScene extends Phaser.Scene {
       paddleWidth,
       paddleHeight
     );
+    this.player1.body.setCollideWorldBounds(false);
     this.player2 = crearJugador(
       this,
       this.offsetX + w / 2,
@@ -44,6 +48,7 @@ class TennisScene extends Phaser.Scene {
       paddleWidth,
       paddleHeight
     );
+    this.player2.body.setCollideWorldBounds(false);
 
     const radius = h * 0.01;
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
@@ -67,6 +72,31 @@ class TennisScene extends Phaser.Scene {
     const h = this.courtHeight;
     const offsetX = this.offsetX;
     const offsetY = this.offsetY;
+    const canvasW = this.canvasWidth;
+    const canvasH = this.canvasHeight;
+    const midY = canvasH / 2;
+
+    // Keep players within the canvas and their respective halves
+    this.player1.x = Phaser.Math.Clamp(
+      this.player1.x,
+      this.player1.width / 2,
+      canvasW - this.player1.width / 2
+    );
+    this.player1.y = Phaser.Math.Clamp(
+      this.player1.y,
+      midY + this.player1.height / 2,
+      canvasH - this.player1.height / 2
+    );
+    this.player2.x = Phaser.Math.Clamp(
+      this.player2.x,
+      this.player2.width / 2,
+      canvasW - this.player2.width / 2
+    );
+    this.player2.y = Phaser.Math.Clamp(
+      this.player2.y,
+      this.player2.height / 2,
+      midY - this.player2.height / 2
+    );
 
     const speed = 400;
     this.player1.body.setVelocity(0);
@@ -80,12 +110,12 @@ class TennisScene extends Phaser.Scene {
 
       if (
         this.cursors.up.isDown &&
-        this.player1.y > offsetY + h / 2 + 20
+        this.player1.y > midY + 20
       ) {
         this.player1.body.setVelocityY(-speed);
       } else if (
         this.cursors.down.isDown &&
-        this.player1.y < offsetY + h - 20
+        this.player1.y < canvasH - 20
       ) {
         this.player1.body.setVelocityY(speed);
       }
@@ -100,8 +130,8 @@ class TennisScene extends Phaser.Scene {
     if (this.ballInPlay && this.ball.body.velocity.y < 0) {
       const targetX = Phaser.Math.Clamp(
         this.ball.x,
-        offsetX + this.player2.width / 2,
-        offsetX + w - this.player2.width / 2
+        this.player2.width / 2,
+        canvasW - this.player2.width / 2
       );
       const delta = targetX - this.player2.x;
       if (Math.abs(delta) > 10) {
