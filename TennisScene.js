@@ -7,6 +7,8 @@ class TennisScene extends Phaser.Scene {
     this.ballSpin = 0;
     this.effectKey = null;
     this.controlsText = null;
+    // Indicates if the bot is currently trying to approach the net
+    this.botAdvance = false;
   }
 
   preload() {}
@@ -52,6 +54,8 @@ class TennisScene extends Phaser.Scene {
       paddleHeight
     );
     this.player2.body.setCollideWorldBounds(false);
+    // Record the baseline position so the bot can return to it
+    this.player2BaselineY = this.player2.y;
 
     const radius = h * 0.01;
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
@@ -144,14 +148,49 @@ class TennisScene extends Phaser.Scene {
         this.player2.width / 2,
         canvasW - this.player2.width / 2
       );
-      const delta = targetX - this.player2.x;
-      if (Math.abs(delta) > 10) {
-        this.player2.body.setVelocityX(Phaser.Math.Clamp(delta * 4, -300, 300));
+      const deltaX = targetX - this.player2.x;
+      if (Math.abs(deltaX) > 10) {
+        this.player2.body.setVelocityX(
+          Phaser.Math.Clamp(deltaX * 4, -300, 300)
+        );
       } else {
         this.player2.body.setVelocityX(0);
       }
+
+      let targetY = this.player2BaselineY;
+      const nearEdge =
+        this.player1.x < offsetX + w * 0.2 ||
+        this.player1.x > offsetX + w * 0.8;
+      if (nearEdge) {
+        // Occasionally advance towards the net when the opponent is in a corner
+        if (!this.botAdvance && Phaser.Math.Between(0, 100) < 50) {
+          this.botAdvance = true;
+        }
+      }
+
+      if (this.botAdvance) {
+        targetY = midY - this.player2.height;
+      }
+
+      const deltaY = targetY - this.player2.y;
+      if (Math.abs(deltaY) > 10) {
+        this.player2.body.setVelocityY(
+          Phaser.Math.Clamp(deltaY * 4, -300, 300)
+        );
+      } else {
+        this.player2.body.setVelocityY(0);
+      }
     } else {
       this.player2.body.setVelocityX(0);
+      const deltaY = this.player2BaselineY - this.player2.y;
+      this.botAdvance = false;
+      if (Math.abs(deltaY) > 10) {
+        this.player2.body.setVelocityY(
+          Phaser.Math.Clamp(deltaY * 4, -300, 300)
+        );
+      } else {
+        this.player2.body.setVelocityY(0);
+      }
     }
 
     if (!this.ballInPlay && Phaser.Input.Keyboard.JustDown(this.startKey)) {
