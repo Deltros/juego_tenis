@@ -4,6 +4,10 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.maxBallSpeed = 600;
     this.lastHitter = 0;
+    this.botAggressive = false;
+    this.player2BaselineY = 0;
+    this.player2NetY = 0;
+    this.player2TargetY = 0;
   }
 
   preload() {}
@@ -65,6 +69,11 @@ class TennisScene extends Phaser.Scene {
     this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     this.scoreboard = new Scoreboard(this, w, h, this.offsetX, this.offsetY);
+
+    const midY = canvasH / 2;
+    this.player2BaselineY = this.player2.y;
+    this.player2NetY = midY - this.player2.height / 2;
+    this.player2TargetY = this.player2BaselineY;
   }
 
   update() {
@@ -127,12 +136,33 @@ class TennisScene extends Phaser.Scene {
       this.ball.setPosition(this.player1.x, this.player1.y - 20);
     }
 
+    if (this.ballInPlay && this.ball.body.velocity.y > 0) {
+      if (
+        this.player1.x < offsetX + w * 0.25 ||
+        this.player1.x > offsetX + w * 0.75
+      ) {
+        if (Phaser.Math.FloatBetween(0, 1) < 0.4) {
+          this.botAggressive = true;
+          this.player2TargetY = this.player2NetY;
+        }
+      }
+    }
+
+    let targetX;
     if (this.ballInPlay && this.ball.body.velocity.y < 0) {
-      const targetX = Phaser.Math.Clamp(
-        this.ball.x,
-        this.player2.width / 2,
-        canvasW - this.player2.width / 2
-      );
+      if (this.botAggressive) {
+        targetX = Phaser.Math.Clamp(
+          canvasW - this.player1.x,
+          this.player2.width / 2,
+          canvasW - this.player2.width / 2
+        );
+      } else {
+        targetX = Phaser.Math.Clamp(
+          this.ball.x,
+          this.player2.width / 2,
+          canvasW - this.player2.width / 2
+        );
+      }
       const delta = targetX - this.player2.x;
       if (Math.abs(delta) > 10) {
         this.player2.body.setVelocityX(Phaser.Math.Clamp(delta * 4, -300, 300));
@@ -141,6 +171,18 @@ class TennisScene extends Phaser.Scene {
       }
     } else {
       this.player2.body.setVelocityX(0);
+    }
+
+    if (!this.ballInPlay || this.ball.body.velocity.y > 0) {
+      this.botAggressive = false;
+      this.player2TargetY = this.player2BaselineY;
+    }
+
+    const deltaY = this.player2TargetY - this.player2.y;
+    if (Math.abs(deltaY) > 5) {
+      this.player2.body.setVelocityY(Phaser.Math.Clamp(deltaY * 4, -300, 300));
+    } else {
+      this.player2.body.setVelocityY(0);
     }
 
     if (!this.ballInPlay && Phaser.Input.Keyboard.JustDown(this.startKey)) {
@@ -201,5 +243,9 @@ class TennisScene extends Phaser.Scene {
       this.offsetY + this.courtHeight - this.player1.height / 2
     );
     this.ball.setPosition(this.player1.x, this.player1.y - 20);
+
+    this.botAggressive = false;
+    this.player2TargetY = this.player2BaselineY;
+    this.player2.setPosition(this.player2.x, this.player2BaselineY);
   }
 }
