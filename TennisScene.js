@@ -26,8 +26,8 @@ class TennisScene extends Phaser.Scene {
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
     this.ball.body.setMaxVelocity(this.maxBallSpeed, this.maxBallSpeed);
 
-    this.physics.add.collider(this.ball, this.player1);
-    this.physics.add.collider(this.ball, this.player2);
+    this.physics.add.collider(this.ball, this.player1, this.onPlayerHit, null, this);
+    this.physics.add.collider(this.ball, this.player2, this.onPlayerHit, null, this);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -87,6 +87,24 @@ class TennisScene extends Phaser.Scene {
     } else if (this.ball.y > h) {
       this.scoreboard.pointFor(1);
       this.resetBall();
+    }
+  }
+
+  onPlayerHit(ball, player) {
+    const ballBody = ball.body;
+    const playerBody = player.body;
+    const relativeX = ball.x - player.x;
+    const dir = player === this.player1 ? -1 : 1;
+
+    const vx = ballBody.velocity.x + relativeX * 5 + playerBody.velocity.x * 0.5;
+    const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.5);
+
+    ballBody.setVelocity(vx, vy);
+
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    if (speed > this.maxBallSpeed) {
+      const scale = this.maxBallSpeed / speed;
+      ballBody.setVelocity(vx * scale, vy * scale);
     }
   }
 
