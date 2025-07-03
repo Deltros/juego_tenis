@@ -1,11 +1,11 @@
 const tennisScore = ["0", "15", "30", "40"]; 
 
 class Scoreboard {
-  constructor(scene, w, h) {
+  constructor(scene, w, h, offsetX = 0, offsetY = 0) {
     this.scene = scene;
     this.scores = [0, 0];
     this.text = scene.add
-      .text(w / 2, h * 0.52, "", { fontSize: "32px", fill: "#fff" })
+      .text(offsetX + w / 2, offsetY + h + 30, "", { fontSize: "32px", fill: "#fff" })
       .setOrigin(0.5);
     this.update();
   }
