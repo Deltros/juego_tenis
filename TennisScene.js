@@ -6,6 +6,7 @@ class TennisScene extends Phaser.Scene {
     this.lastHitter = 0;
     this.ballSpin = 0;
     this.effectKey = null;
+    this.controlsText = null;
   }
 
   preload() {}
@@ -66,6 +67,13 @@ class TennisScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.effectKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+
+    this.controlsText = this.add
+      .text(this.canvasWidth / 2, this.offsetY / 2, "Espacio: sacar | X: efecto", {
+        fontSize: "20px",
+        fill: "#fff",
+      })
+      .setOrigin(0.5);
 
     this.scoreboard = new Scoreboard(this, w, h, this.offsetX, this.offsetY);
   }
