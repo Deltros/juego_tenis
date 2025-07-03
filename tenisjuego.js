@@ -1,3 +1,46 @@
+
+function crearCancha(scene, w, h) {
+  scene.add.rectangle(w / 2, h / 2, w, h, 0x1b5e20);
+
+  const lineColor = 0xffffff;
+  const thickness = 4;
+
+  scene.add.rectangle(w / 2, thickness / 2, w, thickness, lineColor);
+  scene.add.rectangle(w / 2, h - thickness / 2, w, thickness, lineColor);
+  scene.add.rectangle(thickness / 2, h / 2, thickness, h, lineColor);
+  scene.add.rectangle(w - thickness / 2, h / 2, thickness, h, lineColor);
+
+  scene.add.rectangle(w / 2, h / 2, w, thickness, lineColor);
+  scene.add.rectangle(w / 2, h * 0.375, thickness, h * 0.25, lineColor);
+  scene.add.rectangle(w / 2, h * 0.625, thickness, h * 0.25, lineColor);
+
+  const sideInset = w * 0.08;
+  scene.add.rectangle(sideInset, h / 2, thickness, h, lineColor);
+  scene.add.rectangle(w - sideInset, h / 2, thickness, h, lineColor);
+
+  const singlesWidth = w - 2 * sideInset;
+  scene.add.rectangle(w / 2, h * 0.25, singlesWidth, thickness, lineColor);
+  scene.add.rectangle(w / 2, h * 0.75, singlesWidth, thickness, lineColor);
+}
+
+function crearJugador(scene, x, y, width, height) {
+  const player = scene.add.rectangle(x, y, width, height, 0xffffff);
+  scene.physics.add.existing(player);
+  player.body.setImmovable(true);
+  player.body.setCollideWorldBounds(true);
+  return player;
+}
+
+function crearPelota(scene, x, y, radius) {
+  const pelota = scene.add.circle(x, y, radius, 0xffffff);
+  scene.physics.add.existing(pelota);
+  pelota.body.setCircle(radius);
+  pelota.body.setCollideWorldBounds(true);
+  pelota.body.setBounce(1);
+  return pelota;
+}
+
+
 const gameConfig = {
   type: Phaser.AUTO,
   width: 600,
@@ -9,163 +52,7 @@ const gameConfig = {
       debug: false
     }
   },
-  scene: {
-    preload,
-    create,
-    update
-  }
+  scene: TennisScene
 };
 
 const game = new Phaser.Game(gameConfig);
-
-let player1, player2, ball, cursors, startKey;
-let scoreText;
-let scores = [0, 0];
-let tennisScore = ["0", "15", "30", "40"];
-let ballInPlay = false;
-
-function preload() {}
-
-function create() {
-  const w = this.sys.game.config.width;
-  const h = this.sys.game.config.height;
-
-  // Fondo
-  this.add.rectangle(w / 2, h / 2, w, h, 0x1b5e20); // verde base
-
-  // Líneas de cancha estilo profesional
-  const lineColor = 0xffffff;
-  const thickness = 4;
-
-  // Bordes exteriores
-  this.add.rectangle(w / 2, thickness / 2, w, thickness, lineColor); // arriba
-  this.add.rectangle(w / 2, h - thickness / 2, w, thickness, lineColor); // abajo
-  this.add.rectangle(thickness / 2, h / 2, thickness, h, lineColor); // izquierda
-  this.add.rectangle(w - thickness / 2, h / 2, thickness, h, lineColor); // derecha
-
-  // Red (línea central horizontal)
-  this.add.rectangle(w / 2, h / 2, w, thickness, lineColor);
-
-  // Línea vertical de la "T" superior (de la red hacia arriba)
-  this.add.rectangle(w / 2, (h * 0.375), thickness, h * 0.25, lineColor);
-
-  // Línea vertical de la "T" inferior (de la red hacia abajo)
-  this.add.rectangle(w / 2, (h * 0.625), thickness, h * 0.25, lineColor);
-
-  // Líneas de pasillo de dobles (laterales internas)
-  const sideInset = w * 0.08;
-  this.add.rectangle(sideInset, h / 2, thickness, h, lineColor); // izquierda interna
-  this.add.rectangle(w - sideInset, h / 2, thickness, h, lineColor); // derecha interna
-
-  // Línea horizontal de la "T"
-  const singlesWidth = w - 2 * sideInset;
-  this.add.rectangle(w / 2, h * 0.25, singlesWidth, thickness, lineColor); // línea horizontal superior
-  this.add.rectangle(w / 2, h * 0.75, singlesWidth, thickness, lineColor); // línea horizontal inferior
-
-  // Paletas
-  // Increase paddle width for both players
-  const paddleWidth = w * 0.15;
-  const paddleHeight = h * 0.02;
-
-  player1 = this.add.rectangle(w / 2, h * 0.95, paddleWidth, paddleHeight, 0xffffff);
-  player2 = this.add.rectangle(w / 2, h * 0.05, paddleWidth, paddleHeight, 0xffffff);
-
-  this.physics.add.existing(player1);
-  this.physics.add.existing(player2);
-  player1.body.setImmovable(true);
-  player2.body.setImmovable(true);
-  player1.body.setCollideWorldBounds(true);
-  player2.body.setCollideWorldBounds(true);
-
-  // Pelota
-  const radius = h * 0.01;
-  ball = this.add.circle(player1.x, player1.y - 20, radius, 0xffffff);
-  this.physics.add.existing(ball);
-  ball.body.setCircle(radius);
-  ball.body.setCollideWorldBounds(true);
-  ball.body.setBounce(1);
-
-  // Colisiones
-  this.physics.add.collider(ball, player1);
-  this.physics.add.collider(ball, player2);
-
-  // Input
-  cursors = this.input.keyboard.createCursorKeys();
-  startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-  // Texto puntaje
-  scoreText = this.add.text(w / 2, h * 0.52, "", {
-    fontSize: "32px",
-    fill: "#fff"
-  }).setOrigin(0.5);
-
-  updateScoreText();
-}
-
-function update() {
-  const w = this.sys.game.config.width;
-  const h = this.sys.game.config.height;
-
-  const speed = 400;
-  player1.body.setVelocity(0);
-
-  if (cursors.left.isDown) {
-    player1.body.setVelocityX(-speed);
-  } else if (cursors.right.isDown) {
-    player1.body.setVelocityX(speed);
-  }
-
-  if (cursors.up.isDown && player1.y > h / 2 + 20) {
-    player1.body.setVelocityY(-speed);
-  } else if (cursors.down.isDown && player1.y < h - 20) {
-    player1.body.setVelocityY(speed);
-  }
-
-  // Bot
-  if (ballInPlay && ball.body.velocity.y < 0) {
-    const targetX = Phaser.Math.Clamp(ball.x, player2.width / 2, w - player2.width / 2);
-    const delta = targetX - player2.x;
-    if (Math.abs(delta) > 10) {
-      player2.body.setVelocityX(Phaser.Math.Clamp(delta * 4, -300, 300));
-    } else {
-      player2.body.setVelocityX(0);
-    }
-  } else {
-    player2.body.setVelocityX(0);
-  }
-
-  // Lanzamiento
-  if (!ballInPlay && Phaser.Input.Keyboard.JustDown(startKey)) {
-    ballInPlay = true;
-    ball.body.setVelocity(Phaser.Math.Between(-200, 200), -400);
-  }
-
-  // Puntos
-  if (ball.y < 0) {
-    pointFor(0);
-  } else if (ball.y > h) {
-    pointFor(1);
-  }
-}
-
-function pointFor(winnerIndex) {
-  ballInPlay = false;
-  scores[winnerIndex]++;
-
-  if (scores[winnerIndex] > 3) {
-    scores = [0, 0];
-    alert("¡Punto para " + (winnerIndex === 0 ? "Jugador 1!" : "el Bot!") + "\nPresiona espacio para continuar");
-  }
-
-  updateScoreText();
-
-  const w = game.config.width;
-  const h = game.config.height;
-  ball.body.setVelocity(0);
-  ball.setPosition(player1.x, player1.y - 20);
-}
-
-function updateScoreText() {
-  let text = `Jugador 1: ${tennisScore[scores[0] || 0]}   |   Bot: ${tennisScore[scores[1] || 0]}`;
-  scoreText.setText(text);
-}
