@@ -2,6 +2,7 @@ class TennisScene extends Phaser.Scene {
   constructor() {
     super("TennisScene");
     this.ballInPlay = false;
+    this.maxBallSpeed = 600;
   }
 
   preload() {}
@@ -64,6 +65,16 @@ class TennisScene extends Phaser.Scene {
     if (!this.ballInPlay && Phaser.Input.Keyboard.JustDown(this.startKey)) {
       this.ballInPlay = true;
       this.ball.body.setVelocity(Phaser.Math.Between(-200, 200), -400);
+    }
+
+    if (this.ballInPlay) {
+      const vx = this.ball.body.velocity.x;
+      const vy = this.ball.body.velocity.y;
+      const speed = Math.sqrt(vx * vx + vy * vy);
+      if (speed > this.maxBallSpeed) {
+        const scale = this.maxBallSpeed / speed;
+        this.ball.body.setVelocity(vx * scale, vy * scale);
+      }
     }
 
     if (this.ball.y < 0) {
