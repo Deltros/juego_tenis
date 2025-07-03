@@ -8,19 +8,41 @@ class TennisScene extends Phaser.Scene {
   preload() {}
 
   create() {
-    const w = this.sys.game.config.width;
-    const h = this.sys.game.config.height;
+    const canvasW = this.sys.game.config.width;
+    const canvasH = this.sys.game.config.height;
+
+    const w = 600;
+    const h = 800;
+
+    this.courtWidth = w;
+    this.courtHeight = h;
+    this.offsetX = (canvasW - w) / 2;
+    this.offsetY = (canvasH - h) / 2;
+
+    this.physics.world.setBounds(this.offsetX, this.offsetY, w, h);
 
     // Increase the physics simulation rate to improve collision accuracy
     this.physics.world.setFPS(120);
 
-    crearCancha(this, w, h);
+    crearCancha(this, w, h, this.offsetX, this.offsetY);
 
     const paddleWidth = w * 0.15;
     const paddleHeight = h * 0.02;
 
-    this.player1 = crearJugador(this, w / 2, h * 0.95, paddleWidth, paddleHeight);
-    this.player2 = crearJugador(this, w / 2, h * 0.05, paddleWidth, paddleHeight);
+    this.player1 = crearJugador(
+      this,
+      this.offsetX + w / 2,
+      this.offsetY + h - paddleHeight / 2,
+      paddleWidth,
+      paddleHeight
+    );
+    this.player2 = crearJugador(
+      this,
+      this.offsetX + w / 2,
+      this.offsetY + paddleHeight / 2,
+      paddleWidth,
+      paddleHeight
+    );
 
     const radius = h * 0.01;
     this.ball = crearPelota(this, this.player1.x, this.player1.y - 20, radius);
@@ -33,26 +55,38 @@ class TennisScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    this.scoreboard = new Scoreboard(this, w, h);
+    this.scoreboard = new Scoreboard(this, w, h, this.offsetX, this.offsetY);
   }
 
   update() {
-    const w = this.sys.game.config.width;
-    const h = this.sys.game.config.height;
+    const w = this.courtWidth;
+    const h = this.courtHeight;
+    const offsetX = this.offsetX;
+    const offsetY = this.offsetY;
 
     const speed = 400;
     this.player1.body.setVelocity(0);
 
-    if (this.cursors.left.isDown) {
-      this.player1.body.setVelocityX(-speed);
-    } else if (this.cursors.right.isDown) {
-      this.player1.body.setVelocityX(speed);
-    }
+    if (this.ballInPlay) {
+      if (this.cursors.left.isDown) {
+        this.player1.body.setVelocityX(-speed);
+      } else if (this.cursors.right.isDown) {
+        this.player1.body.setVelocityX(speed);
+      }
 
-    if (this.cursors.up.isDown && this.player1.y > h / 2 + 20) {
-      this.player1.body.setVelocityY(-speed);
-    } else if (this.cursors.down.isDown && this.player1.y < h - 20) {
-      this.player1.body.setVelocityY(speed);
+      if (
+        this.cursors.up.isDown &&
+        this.player1.y > offsetY + h / 2 + 20
+      ) {
+        this.player1.body.setVelocityY(-speed);
+      } else if (
+        this.cursors.down.isDown &&
+        this.player1.y < offsetY + h - 20
+      ) {
+        this.player1.body.setVelocityY(speed);
+      }
+    } else {
+      this.player1.setPosition(offsetX + w / 2, offsetY + h - this.player1.height / 2);
     }
 
     if (!this.ballInPlay) {
@@ -60,7 +94,11 @@ class TennisScene extends Phaser.Scene {
     }
 
     if (this.ballInPlay && this.ball.body.velocity.y < 0) {
-      const targetX = Phaser.Math.Clamp(this.ball.x, this.player2.width / 2, w - this.player2.width / 2);
+      const targetX = Phaser.Math.Clamp(
+        this.ball.x,
+        offsetX + this.player2.width / 2,
+        offsetX + w - this.player2.width / 2
+      );
       const delta = targetX - this.player2.x;
       if (Math.abs(delta) > 10) {
         this.player2.body.setVelocityX(Phaser.Math.Clamp(delta * 4, -300, 300));
@@ -87,10 +125,10 @@ class TennisScene extends Phaser.Scene {
       }
     }
 
-    if (this.ball.y < 0) {
+    if (this.ball.y < offsetY) {
       this.scoreboard.pointFor(0);
       this.resetBall();
-    } else if (this.ball.y > h) {
+    } else if (this.ball.y > offsetY + h) {
       this.scoreboard.pointFor(1);
       this.resetBall();
     }
@@ -118,6 +156,10 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.ball.body.setVelocity(0);
     this.ball.body.enable = false;
+    this.player1.setPosition(
+      this.offsetX + this.courtWidth / 2,
+      this.offsetY + this.courtHeight - this.player1.height / 2
+    );
     this.ball.setPosition(this.player1.x, this.player1.y - 20);
   }
 }
