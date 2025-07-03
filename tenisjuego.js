@@ -74,6 +74,8 @@ function create() {
   this.physics.add.existing(player2);
   player1.body.setImmovable(true);
   player2.body.setImmovable(true);
+  player1.body.setCollideWorldBounds(true);
+  player2.body.setCollideWorldBounds(true);
 
   // Pelota
   const radius = h * 0.01;
