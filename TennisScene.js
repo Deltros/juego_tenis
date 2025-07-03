@@ -4,6 +4,9 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.maxBallSpeed = 600;
     this.lastHitter = 0;
+    this.ballSpin = 0;
+    this.effectKey = null;
+    this.controlsText = null;
   }
 
   preload() {}
@@ -63,6 +66,14 @@ class TennisScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.effectKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+
+    this.controlsText = this.add
+      .text(this.canvasWidth / 2, this.offsetY / 2, "Espacio: sacar | X: efecto", {
+        fontSize: "20px",
+        fill: "#fff",
+      })
+      .setOrigin(0.5);
 
     this.scoreboard = new Scoreboard(this, w, h, this.offsetX, this.offsetY);
   }
@@ -157,6 +168,14 @@ class TennisScene extends Phaser.Scene {
         const scale = this.maxBallSpeed / speed;
         this.ball.body.setVelocity(vx * scale, vy * scale);
       }
+
+      if (this.ballSpin !== 0) {
+        this.ball.body.setVelocityX(this.ball.body.velocity.x + this.ballSpin);
+        this.ballSpin *= 0.98;
+        if (Math.abs(this.ballSpin) < 0.1) {
+          this.ballSpin = 0;
+        }
+      }
     }
 
   }
@@ -169,8 +188,19 @@ class TennisScene extends Phaser.Scene {
 
     this.lastHitter = player === this.player1 ? 0 : 1;
 
-    const vx = ballBody.velocity.x + relativeX * 5 + playerBody.velocity.x * 0.5;
-    const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.5);
+    const vx =
+      ballBody.velocity.x +
+      relativeX * 5 +
+      playerBody.velocity.x * 0.8;
+    const vy = dir * Math.abs(ballBody.velocity.y + playerBody.velocity.y * 0.8);
+
+    // Apply spin only when the effect key is held down
+    if (this.effectKey && this.effectKey.isDown) {
+      // Reverse spin direction so it curves opposite to the player's movement
+      this.ballSpin = -playerBody.velocity.x * 0.02;
+    } else {
+      this.ballSpin = 0;
+    }
 
     ballBody.setVelocity(vx, vy);
 
@@ -196,6 +226,7 @@ class TennisScene extends Phaser.Scene {
     this.ballInPlay = false;
     this.ball.body.setVelocity(0);
     this.ball.body.enable = false;
+    this.ballSpin = 0;
     this.player1.setPosition(
       this.offsetX + this.courtWidth / 2,
       this.offsetY + this.courtHeight - this.player1.height / 2
