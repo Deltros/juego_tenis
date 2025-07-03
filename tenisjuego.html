@@ -84,7 +84,8 @@
       this.add.rectangle(w / 2, h * 0.75, singlesWidth, thickness, lineColor); // línea horizontal inferior
 
       // Paletas
-      const paddleWidth = w * 0.1;
+      // Increase paddle width for both players
+      const paddleWidth = w * 0.15;
       const paddleHeight = h * 0.02;
 
       player1 = this.add.rectangle(w / 2, h * 0.95, paddleWidth, paddleHeight, 0xffffff);
