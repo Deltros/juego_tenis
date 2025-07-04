@@ -83,15 +83,19 @@ class TennisScene extends Phaser.Scene {
   }
 
   update() {
-    const w = this.courtWidth;
-    const h = this.courtHeight;
-    const offsetX = this.offsetX;
-    const offsetY = this.offsetY;
+    this.keepPlayersInBounds();
+    this.handlePlayerInput();
+    this.positionBallWithServer();
+    this.handleBotMovement();
+    this.checkServe();
+    this.updateBallPhysics();
+  }
+
+  keepPlayersInBounds() {
     const canvasW = this.canvasWidth;
     const canvasH = this.canvasHeight;
     const midY = canvasH / 2;
 
-    // Keep players within the canvas and their respective halves
     this.player1.x = Phaser.Math.Clamp(
       this.player1.x,
       this.player1.width / 2,
@@ -102,6 +106,7 @@ class TennisScene extends Phaser.Scene {
       midY + this.player1.height / 2,
       canvasH - this.player1.height / 2
     );
+
     this.player2.x = Phaser.Math.Clamp(
       this.player2.x,
       this.player2.width / 2,
@@ -112,7 +117,10 @@ class TennisScene extends Phaser.Scene {
       this.player2.height / 2,
       midY - this.player2.height / 2
     );
+  }
 
+  handlePlayerInput() {
+    const midY = this.canvasHeight / 2;
     const speed = 400;
     this.player1.body.setVelocity(0);
 
@@ -123,24 +131,30 @@ class TennisScene extends Phaser.Scene {
         this.player1.body.setVelocityX(speed);
       }
 
-      if (
-        this.cursors.up.isDown &&
-        this.player1.y > midY + 20
-      ) {
+      if (this.cursors.up.isDown && this.player1.y > midY + 20) {
         this.player1.body.setVelocityY(-speed);
-      } else if (
-        this.cursors.down.isDown &&
-        this.player1.y < canvasH - 20
-      ) {
+      } else if (this.cursors.down.isDown && this.player1.y < this.canvasHeight - 20) {
         this.player1.body.setVelocityY(speed);
       }
     } else {
-      this.player1.setPosition(offsetX + w / 2, offsetY + h - this.player1.height / 2);
+      this.player1.setPosition(
+        this.offsetX + this.courtWidth / 2,
+        this.offsetY + this.courtHeight - this.player1.height / 2
+      );
     }
+  }
 
+  positionBallWithServer() {
     if (!this.ballInPlay) {
       this.ball.setPosition(this.player1.x, this.player1.y - 20);
     }
+  }
+
+  handleBotMovement() {
+    const canvasW = this.canvasWidth;
+    const midY = this.canvasHeight / 2;
+    const offsetX = this.offsetX;
+    const w = this.courtWidth;
 
     if (this.ballInPlay && this.ball.body.velocity.y < 0) {
       const targetX = Phaser.Math.Clamp(
@@ -162,7 +176,6 @@ class TennisScene extends Phaser.Scene {
         this.player1.x < offsetX + w * 0.2 ||
         this.player1.x > offsetX + w * 0.8;
       if (nearEdge) {
-        // Occasionally advance towards the net when the opponent is in a corner
         if (!this.botAdvance && Phaser.Math.Between(0, 100) < 50) {
           this.botAdvance = true;
         }
@@ -192,31 +205,36 @@ class TennisScene extends Phaser.Scene {
         this.player2.body.setVelocityY(0);
       }
     }
+  }
 
+  checkServe() {
     if (!this.ballInPlay && Phaser.Input.Keyboard.JustDown(this.startKey)) {
       this.ballInPlay = true;
       this.ball.body.enable = true;
       this.ball.body.setVelocity(Phaser.Math.Between(-200, 200), -400);
     }
+  }
 
-    if (this.ballInPlay) {
-      const vx = this.ball.body.velocity.x;
-      const vy = this.ball.body.velocity.y;
-      const speed = Math.sqrt(vx * vx + vy * vy);
-      if (speed > this.maxBallSpeed) {
-        const scale = this.maxBallSpeed / speed;
-        this.ball.body.setVelocity(vx * scale, vy * scale);
-      }
-
-      if (this.ballSpin !== 0) {
-        this.ball.body.setVelocityX(this.ball.body.velocity.x + this.ballSpin);
-        this.ballSpin *= 0.98;
-        if (Math.abs(this.ballSpin) < 0.1) {
-          this.ballSpin = 0;
-        }
-      }
+  updateBallPhysics() {
+    if (!this.ballInPlay) {
+      return;
     }
 
+    const vx = this.ball.body.velocity.x;
+    const vy = this.ball.body.velocity.y;
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    if (speed > this.maxBallSpeed) {
+      const scale = this.maxBallSpeed / speed;
+      this.ball.body.setVelocity(vx * scale, vy * scale);
+    }
+
+    if (this.ballSpin !== 0) {
+      this.ball.body.setVelocityX(this.ball.body.velocity.x + this.ballSpin);
+      this.ballSpin *= 0.98;
+      if (Math.abs(this.ballSpin) < 0.1) {
+        this.ballSpin = 0;
+      }
+    }
   }
 
   onPlayerHit(ball, player) {
